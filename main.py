@@ -98,9 +98,9 @@ def __list_to_df(input:list,site:str,reqDate:datetime.datetime,num): #creates th
 def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     res=__google_search(selected_topics, my_api_key, my_cse_id)
     
-    medium= "https://medium.com/tag/"+selected_topics+"/recommended"
-    reuters= "https://www.reuters.com/site-search/?query="+selected_topics+"&sort=newest&offset=0" #tags:h3,time
-    bbc= "https://www.bbc.com/news/technology"
+    #medium= "https://medium.com/tag/"+selected_topics+"/recommended"
+    #reuters= "https://www.reuters.com/site-search/?query="+selected_topics+"&sort=newest&offset=0" #tags:h3,time
+    #bbc= "https://www.bbc.com/news/technology"
 
     links = [res[0]]
     linkSplit=res[0].split(".")
