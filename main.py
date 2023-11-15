@@ -11,8 +11,8 @@ from dateutil.relativedelta import relativedelta
 from googleapiclient.discovery import build
 
 #google keys
-my_api_key = 'AIzaSyC4G-OBo6a5ADr1VzGYZQoSAJMqSX4ADmk'
-my_cse_id = "2499f86608a3c43f8"
+my_api_key = 'YOUR API KEY'
+my_cse_id = "YOUR SEARCH ENGİNE ID"
 
 #openai key
 load_dotenv()
