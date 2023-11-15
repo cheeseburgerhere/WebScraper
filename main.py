@@ -11,8 +11,8 @@ from dateutil.relativedelta import relativedelta
 from googleapiclient.discovery import build
 
 #google keys
-my_api_key = 'YOUR API KEY'
-my_cse_id = "YOUR SEARCH ENGİNE ID"
+my_api_key : str = 'YOUR API KEY'
+my_cse_id : str = "YOUR SEARCH ENGİNE ID"
 
 #openai key
 load_dotenv()
@@ -38,7 +38,7 @@ def __webPull(link:list): #pulls data fram website
 
     bs_transformer=BeautifulSoupTransformer()
     docs_transformed=bs_transformer.transform_documents(
-        docs,tags_to_extract=[ "h2","h3","p","div","span" ] 
+        docs,tags_to_extract=[ "h2","h3","div","span","time" ] 
     )
     splitter=RecursiveCharacterTextSplitter.from_tiktoken_encoder(chunk_size=1000, chunk_overlap=0)
     splits = splitter.split_documents(docs_transformed)
@@ -102,7 +102,9 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     reuters= "https://www.reuters.com/site-search/?query="+selected_topics+"&sort=newest&offset=0" #tags:h3,time
     bbc= "https://www.bbc.com/news/technology"
 
-    links = [res]
+    links = [res[0]]
+    linkSplit=res[0].split(".")
+    linkName=linkSplit[1]
     
     splits = __webPull(link=links)
     lastDate = __parseDate(time_range)
@@ -119,14 +121,8 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     for split in splits:
         extraction=__extract(split, schema=schema, llm=llm) #type list
         
-        df = __list_to_df(extraction, "medium", reqDate=lastDate, num=num_articles)
+        df = __list_to_df(extraction, linkName, reqDate=lastDate, num=num_articles)
         endDf = pd.concat([endDf,df])
-        
-        #print("Current endDf length:", len(endDf))
-        #print("Current endDf:")
-        #print(endDf)
-        #print(endDf)
-
 
         if len(endDf) >= num_articles:
             break
@@ -138,5 +134,3 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     return endDf
 
 scrape_news(time_range="10 days ago",selected_topics="technology news",num_articles=2)
-
-#TODO scrape little info from sites and merge them to give llm 
