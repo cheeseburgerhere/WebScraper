@@ -11,8 +11,8 @@ from dateutil.relativedelta import relativedelta
 from googleapiclient.discovery import build
 
 #google keys
-my_api_key : str = 'YOUR API KEY'
-my_cse_id : str = "YOUR SEARCH ENGİNE ID"
+my_api_key : str = 'YPUR API KEY'
+my_cse_id : str = "YOUR SEACH ENGINE ID"
 
 #openai key
 load_dotenv()
@@ -62,7 +62,7 @@ def __parseDate(date_string:str): #pareses the dates to the correct form
 
         return parsed_date
     except:
-        return None
+        raise TypeError
 
 
 def __list_to_df(input:list,site:str,reqDate:datetime.datetime,num): #creates the dataframe
@@ -96,36 +96,46 @@ def __list_to_df(input:list,site:str,reqDate:datetime.datetime,num): #creates th
 #endregion helpfunctions 
 
 def scrape_news(time_range : str, selected_topics : str, num_articles : int):
+    if type(selected_topics) != str:
+        raise TypeError
+    if num_articles<0:
+        raise IndexError
+    if selected_topics is None or len(selected_topics) == 0:
+        raise TypeError
+    
+    
     res=__google_search(selected_topics, my_api_key, my_cse_id)
-    
-    #medium= "https://medium.com/tag/"+selected_topics+"/recommended"
-    #reuters= "https://www.reuters.com/site-search/?query="+selected_topics+"&sort=newest&offset=0" #tags:h3,time
-    #bbc= "https://www.bbc.com/news/technology"
-
-    links = [res[0]]
-    linkSplit=res[0].split(".")
-    linkName=linkSplit[1]
-    
-    splits = __webPull(link=links)
-    lastDate = __parseDate(time_range)
 
     schema={
-        "properties":{
-            "article_title":{"type":"string"},
-            "article_date":{"type":"string"},
-        },
-        "required":["article_title","article_date"]
+            "properties":{
+                "article_title":{"type":"string"},
+                "article_date":{"type":"string"},
+            },
+            "required":["article_title","article_date"]
     }
-
     endDf = pd.DataFrame()
-    for split in splits:
-        extraction=__extract(split, schema=schema, llm=llm) #type list
+    index : int = 0
+    lastDate = __parseDate(time_range)
+
+    while(index<len(res)):
         
+        links = [res[index]]
+        print(res[index])
+        linkSplit=res[index].split(".")
+        linkName=linkSplit[1]
+        splits = __webPull(link=links)
+
+     
+        extraction=__extract(splits[0], schema=schema, llm=llm) #type list
+         
         df = __list_to_df(extraction, linkName, reqDate=lastDate, num=num_articles)
         endDf = pd.concat([endDf,df])
 
         if len(endDf) >= num_articles:
             break
+        
+        index+=1
+
 
     if len(endDf) < num_articles:
         print("Not enough articles in the timespan!")
@@ -133,4 +143,4 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     print(endDf)
     return endDf
 
-scrape_news(time_range="10 days ago",selected_topics="technology news",num_articles=2)
+scrape_news(time_range="10 days ago",selected_topics="technology news",num_articles=5)
