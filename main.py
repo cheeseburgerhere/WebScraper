@@ -96,11 +96,15 @@ def __list_to_df(input:list,site:str,reqDate:datetime.datetime,num): #creates th
 #endregion helpfunctions 
 
 def scrape_news(time_range : str, selected_topics : str, num_articles : int):
+    lastDate = __parseDate(time_range)
+    
     if type(selected_topics) != str:
         raise TypeError
     if num_articles<0:
         raise IndexError
     if selected_topics is None or len(selected_topics) == 0:
+        raise TypeError
+    if(lastDate== None):
         raise TypeError
     
     
@@ -115,7 +119,7 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     }
     endDf = pd.DataFrame()
     index : int = 0
-    lastDate = __parseDate(time_range)
+    
 
     while(index<len(res)):
         
