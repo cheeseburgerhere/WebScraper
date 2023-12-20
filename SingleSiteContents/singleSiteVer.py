@@ -37,6 +37,13 @@ def __extract(content:str,schema:dict,llm:ChatOpenAI):
 def __parseDate(date_string:str): #pareses the dates to the correct form
     try:
         current_datetime = datetime.datetime.now()
+        tempList=date_string.split(" ")
+        if(tempList[0]=="Published"):
+            sum=""
+            for i in range(1,len(tempList)):
+                sum+=tempList[i]+" "
+            
+            date_string=sum[:-1]
 
         if 'ago' in date_string:
 
@@ -55,23 +62,20 @@ def __list_to_df(input:dict, sites : dict, reqDate:datetime.datetime, num): #cre
     dates=[]
     siteN=[]
     for obj in input:
+        
         if (obj["article_date"]!=None):
-
             date=__parseDate(obj["article_date"])
             if date is not None:  
-
                 date = date.replace(tzinfo=None)
                 reqDate = reqDate.replace(tzinfo=None)
 
                 if (date >= reqDate): 
-
                     if (len(names)>=num):
                         break
-
-                    names.append(obj["article_title"])
-                    dates.append(obj["article_date"])  
-                    siteN.append(sites[obj["article_title"]])
-
+                    if (obj["article_title"] in sites):
+                        names.append(obj["article_title"])
+                        dates.append(obj["article_date"])  
+                        siteN.append(sites[obj["article_title"]])
     df=pd.DataFrame({
         "Names":names,
         "Dates":dates,
@@ -109,16 +113,17 @@ def inputSplitter(input:str): #sometimes scraped data comes without spaces and t
     return titlesString
 
 def linkSplitter(links:str):
-    links = links.split(")")
     linksDic={}
+    links = links.split(")")
 
     for linkAdress in links:
+        #print(links)
         temp=linkAdress
         linkAdress=temp[1:]
         temp=linkAdress.split("(")
-        if(len(temp[0])>2):
+        if(len(temp[0])>2 and len(temp)>1):
             linksDic[temp[0][:-1]]=temp[1]
-            
+                
     return linksDic
 
 def contentsPuller(df:pd.DataFrame): #gets the article content
@@ -148,7 +153,7 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     if(lastDate== None):
         raise TypeError
     
-    df:pd.DataFrame=pd.DataFrame()
+    endDf:pd.DataFrame=pd.DataFrame()
     i: int = 1
     schema={
         "properties":{
@@ -157,29 +162,31 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
         },
         "required":["article_title","article_date"]
     }
-    while(len(df)<num_articles and i<6):
+    while(len(endDf)<num_articles and i<6):
         bbc="https://www.bbc.co.uk/search?q="+selected_topics+"&d=NEWS_GNL&seqId=6dacb860-94ed-11ee-bf63-d95cb16fc5af&page="+str(i)
 
         links = [bbc]
         splits = __webPull(link=links,tags=["h3","div","span"],split=True)
         linksPuller : Document=__webPull(link=links,tags=["a"],split=True)
-
-        linksDic: dict =linkSplitter(linksPuller[0].page_content[1091:])
-
-        content = inputSplitter(splits[0].page_content)[297:]
-
+        linksDic: dict = linkSplitter(linksPuller[0].page_content[1091:])
+        #print(linksDic)
+        content = inputSplitter(splits[0].page_content)
+        #print(content)
         extraction=__extract(content, schema=schema, llm=llm) #type list
+        #print(extraction)
         df = __list_to_df(input=extraction, sites=linksDic, reqDate=lastDate, num=num_articles)
+        endDf = pd.concat([endDf,df])
+
         i+=1
     
-    if len(df) < num_articles:
+    if len(endDf) < num_articles:
         print("Not enough articles in the timespan!")
 
 
-    articleContent=contentsPuller(df)
-    df=pd.merge(df,articleContent,right_index=True,left_index=True)
-    
-    #print(df)
-    return df
+    articleContent=contentsPuller(endDf)
+    endDf=pd.merge(df,articleContent,right_index=True,left_index=True)
+    #df.to_csv("val3.csv")
+    #print(endDf)
+    return endDf
 
-scrape_news(time_range="10 days ago",selected_topics="technology",num_articles=1)
+scrape_news(time_range="10 days ago",selected_topics="world",num_articles=2)
