@@ -196,4 +196,4 @@ def scrape_news(time_range : str, selected_topics : str, num_articles : int):
     print(endDf)
     return endDf
 
-scrape_news(time_range="40 days ago",selected_topics="war",num_articles=3)
+#scrape_news(time_range="40 days ago",selected_topics="war",num_articles=3)
